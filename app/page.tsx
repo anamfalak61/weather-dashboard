@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import CurrentWeather from '@/components/CurrentWeather'
 import ForecastPanel from '@/components/ForecastPanel'
 import Highlights from '@/components/Highlights'
-import RecentSearches from '@/components/RecentSearches'
+import OtherCities from '@/components/OtherCities'
 import SearchBar from '@/components/SearchBar'
 import type { Unit } from '@/lib/format'
 import { addCity, loadHistory } from '@/lib/history'
-import type { DashboardData, SearchStatus } from '@/lib/types'
+import type { DashboardData, RecentCity, SearchStatus } from '@/lib/types'
 import { fetchDashboard, WeatherApiError } from '@/lib/weather'
 
 export default function Home() {
@@ -16,7 +16,7 @@ export default function Home() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [unit, setUnit] = useState<Unit>('C')
   const [errorMessage, setErrorMessage] = useState('')
-  const [history, setHistory] = useState<string[]>([])
+  const [history, setHistory] = useState<RecentCity[]>([])
 
   useEffect(() => {
     setHistory(loadHistory())
@@ -28,8 +28,18 @@ export default function Home() {
 
     try {
       const result = await fetchDashboard(city)
+      const condition = result.current.weather[0]
+
       setData(result)
-      setHistory(addCity(result.current.name))
+      setHistory(
+        addCity({
+          name: result.current.name,
+          country: result.current.sys.country,
+          temp: result.current.main.temp,
+          icon: condition?.icon ?? '01d',
+          description: condition?.description ?? '',
+        }),
+      )
       setStatus('success')
     } catch (error) {
       setErrorMessage(
@@ -51,8 +61,6 @@ export default function Home() {
           <SearchBar onSearch={search} disabled={status === 'loading'} />
         </div>
       </header>
-
-      <RecentSearches cities={history} onSelect={search} />
 
       <div className="mt-8">
         {status === 'idle' && (
@@ -85,7 +93,7 @@ export default function Home() {
           </div>
         )}
 
-               {status === 'success' && data && (
+        {status === 'success' && data && (
           <div className="grid gap-6 lg:grid-cols-5">
             <div className="space-y-6 lg:col-span-3">
               <CurrentWeather
@@ -98,7 +106,19 @@ export default function Home() {
             </div>
             <div className="space-y-6 lg:col-span-2">
               <Highlights current={data.current} forecast={data.forecast} />
+              <OtherCities
+                cities={history}
+                activeName={data.current.name}
+                unit={unit}
+                onSelect={search}
+              />
             </div>
+          </div>
+        )}
+
+        {status !== 'success' && (
+          <div className="mt-8">
+            <OtherCities cities={history} activeName="" unit={unit} onSelect={search} />
           </div>
         )}
       </div>

@@ -55,3 +55,11 @@ export interface ApiErrorBody {
 }
 
 export type SearchStatus = 'idle' | 'loading' | 'error' | 'success'
+
+export interface RecentCity {
+  name: string
+  country: string
+  temp: number
+  icon: string
+  description: string
+}
