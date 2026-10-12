@@ -1,16 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import CurrentWeather from '@/components/CurrentWeather'
+import ForecastPanel from '@/components/ForecastPanel'
+import Highlights from '@/components/Highlights'
 import RecentSearches from '@/components/RecentSearches'
 import SearchBar from '@/components/SearchBar'
-import WeatherCard from '@/components/WeatherCard'
+import type { Unit } from '@/lib/format'
 import { addCity, loadHistory } from '@/lib/history'
-import type { SearchStatus, WeatherData } from '@/lib/types'
-import { fetchWeather, WeatherApiError } from '@/lib/weather'
+import type { DashboardData, SearchStatus } from '@/lib/types'
+import { fetchDashboard, WeatherApiError } from '@/lib/weather'
 
 export default function Home() {
   const [status, setStatus] = useState<SearchStatus>('idle')
-  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [unit, setUnit] = useState<Unit>('C')
   const [errorMessage, setErrorMessage] = useState('')
   const [history, setHistory] = useState<string[]>([])
 
@@ -23,9 +27,9 @@ export default function Home() {
     setErrorMessage('')
 
     try {
-      const data = await fetchWeather(city)
-      setWeather(data)
-      setHistory(addCity(data.name))
+      const result = await fetchDashboard(city)
+      setData(result)
+      setHistory(addCity(result.current.name))
       setStatus('success')
     } catch (error) {
       setErrorMessage(
@@ -39,23 +43,24 @@ export default function Home() {
 
   return (
     <div>
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          Weather <span className="text-violet-600">Dashboard</span>
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          Weather <span className="text-emerald-400">Dashboard</span>
         </h1>
-        <p className="mt-2 text-slate-500">Check the weather in any city, instantly.</p>
+        <div className="w-full sm:max-w-md">
+          <SearchBar onSearch={search} disabled={status === 'loading'} />
+        </div>
       </header>
 
-      <SearchBar onSearch={search} disabled={status === 'loading'} />
       <RecentSearches cities={history} onSelect={search} />
 
       <div className="mt-8">
         {status === 'idle' && (
-          <div className="rounded-3xl border-2 border-dashed border-violet-200 bg-white/60 p-10 text-center">
+          <div className="rounded-3xl border-2 border-dashed border-emerald-400/30 bg-emerald-900/20 p-10 text-center">
             <p aria-hidden="true" className="text-4xl">
               ⛅
             </p>
-            <p className="mt-3 text-slate-600">Search for a city to see its weather.</p>
+            <p className="mt-3 text-emerald-100/80">Search for a city to see its weather.</p>
           </div>
         )}
 
@@ -63,28 +68,39 @@ export default function Home() {
           <div
             role="status"
             aria-label="Loading weather"
-            className="animate-pulse rounded-3xl bg-white/80 p-8 shadow-lg ring-1 ring-violet-100"
+            className="animate-pulse rounded-3xl bg-emerald-900/40 p-8"
           >
-            <div className="h-4 w-1/3 rounded-full bg-slate-200" />
-            <div className="mt-6 h-16 w-1/2 rounded-2xl bg-slate-200" />
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              <div className="h-20 rounded-2xl bg-slate-200" />
-              <div className="h-20 rounded-2xl bg-slate-200" />
-              <div className="h-20 rounded-2xl bg-slate-200" />
-            </div>
+            <div className="h-4 w-1/4 rounded-full bg-emerald-800/70" />
+            <div className="mt-8 h-24 w-1/2 rounded-2xl bg-emerald-800/70" />
+            <div className="mt-6 h-4 w-1/3 rounded-full bg-emerald-800/70" />
           </div>
         )}
 
         {status === 'error' && (
           <div
             role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 p-4 text-center font-medium text-red-700"
+            className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-center font-medium text-red-200"
           >
             {errorMessage}
           </div>
         )}
 
-        {status === 'success' && weather && <WeatherCard data={weather} />}
+               {status === 'success' && data && (
+          <div className="grid gap-6 lg:grid-cols-5">
+            <div className="space-y-6 lg:col-span-3">
+              <CurrentWeather
+                current={data.current}
+                forecast={data.forecast}
+                unit={unit}
+                onUnitChange={setUnit}
+              />
+              <ForecastPanel current={data.current} forecast={data.forecast} unit={unit} />
+            </div>
+            <div className="space-y-6 lg:col-span-2">
+              <Highlights current={data.current} forecast={data.forecast} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

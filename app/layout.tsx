@@ -10,10 +10,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body
-        className="min-h-screen text-slate-900 antialiased"
-        style={{ background: 'linear-gradient(180deg, #f5f3ff 0%, #f1f5f9 100%)' }}
+        className="min-h-screen text-emerald-50 antialiased"
+        style={{ background: 'radial-gradient(circle at top, #0d2b1f 0%, #04100a 65%)' }}
       >
-        <main className="mx-auto w-full max-w-md px-4 py-10 sm:py-16">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
       </body>
     </html>
   )
